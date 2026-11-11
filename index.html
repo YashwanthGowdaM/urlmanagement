@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MyURLs</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f1f3d'/%3E%3Cpath d='M9 22V10l7 8 7-8v12' fill='none' stroke='%237dd3fc' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f3f5f9;--surface:#fff;--text:#142033;--muted:#5b6b82;--line:#dde3ec;--navy:#0f1f3d;--accent:#2563eb;--danger:#d92d20;--shadow:0 1px 2px rgba(15,31,61,.06),0 4px 14px rgba(15,31,61,.05);color-scheme:light}
+:root[data-theme=dark]{--bg:#0b1220;--surface:#131d30;--text:#e6ebf4;--muted:#93a3bb;--line:#243249;--navy:#0a1428;--accent:#6ea0ff;--danger:#ff7066;--shadow:0 1px 2px rgba(0,0,0,.3);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hdr{background:var(--navy);color:#fff;padding:14px 24px 34px}
+.bar{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:.2px}
+.brand svg{width:28px;height:28px}
+.sp{flex:1}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;display:grid;place-items:center}
+.ib:hover{background:rgba(255,255,255,.14)}
+.ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.um{position:relative}
+.menu{position:absolute;right:0;top:44px;min-width:190px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:6px;z-index:20}
+.menu[hidden]{display:none}
+.menu .who{padding:8px 10px;color:var(--muted);font-size:13px}
+.menu button{width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:7px;cursor:pointer}
+.menu button:hover{background:var(--bg)}
+.hero{max-width:1180px;margin:26px auto 0}
+.hero h1{margin:0 0 4px;font-size:28px;letter-spacing:-.3px}
+.hero p{margin:0 0 18px;color:#b4c2d8}
+.sb{position:relative;max-width:720px}
+.sb input{width:100%;height:54px;border-radius:14px;border:1px solid transparent;background:#fff;color:#142033;padding:0 120px 0 50px;font-size:17px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.sb svg{position:absolute;left:17px;top:17px;width:20px;height:20px;fill:none;stroke:#5b6b82;stroke-width:2;stroke-linecap:round}
+.sb kbd{position:absolute;right:14px;top:14px;border:1px solid #cdd5e1;border-radius:6px;padding:1px 8px;font:13px monospace;color:#5b6b82;background:#f3f5f9}
+.sb input:not(:placeholder-shown)~kbd{display:none}
+.meta{max-width:1180px;margin:18px auto 0;padding:0 24px;display:flex;justify-content:space-between;color:var(--muted);font-size:14px;min-height:22px}
+.meta b{color:var(--text)}
+main{max-width:1180px;margin:0 auto;padding:10px 24px 90px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c,var(--accent));border-radius:12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--c)}
+.card>a{display:flex;gap:14px;padding:16px;color:inherit;text-decoration:none;height:100%;border-radius:10px}
+.ico{flex:none;width:44px;height:44px;border-radius:11px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:19px;background:var(--c);overflow:hidden}
+.ico.logo{background:#fff;border:1px solid var(--line)}
+.ico img{width:26px;height:26px}
+.txt{min-width:0;flex:1}
+.nm{font-weight:650;font-size:16px;padding-right:0}
+.ds{color:var(--muted);margin:2px 0 8px}
+.ur{font-size:13px;color:var(--accent);overflow-wrap:anywhere}
+.admin .card>a{padding-bottom:50px}
+.acts{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
+.acts button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 11px;font-size:13px;cursor:pointer}
+.acts button:hover{background:var(--bg)}
+.acts .d{color:var(--danger)}
+.sk{height:104px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(100deg,var(--surface) 30%,var(--bg) 50%,var(--surface) 70%) 0 0/200% 100%;animation:sh 1.3s infinite linear}
+@keyframes sh{to{background-position:-200% 0}}
+.empty{text-align:center;padding:70px 20px;color:var(--muted)}
+.empty h2{color:var(--text);margin:0 0 6px;font-size:20px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 16px;cursor:pointer;font-weight:550}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme=dark] .btn.p{color:#0b1220}
+.btn.p:hover{filter:brightness(1.08)}
+.btn.dg{background:var(--danger);border-color:var(--danger);color:#fff}
+.add{display:none;margin-left:6px;background:#fff;color:var(--navy);border-color:#fff}
+.admin .add{display:inline-block}
+.fab{display:none;position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer;z-index:10}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);padding:0;width:min(440px,calc(100vw - 32px));box-shadow:0 20px 60px rgba(0,0,0,.4)}
+dialog::backdrop{background:rgba(5,10,25,.55)}
+dialog form{padding:22px}
+dialog h2{margin:0 0 14px;font-size:19px}
+label{display:block;font-weight:600;font-size:14px;margin:12px 0 5px}
+.in{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px}
+textarea.in{resize:vertical;min-height:70px}
+.in[aria-invalid=true]{border-color:var(--danger)}
+.er{color:var(--danger);font-size:13px;min-height:18px;margin-top:3px}
+.cn{float:right;font-weight:400;color:var(--muted)}
+.row{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+#toasts{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;align-items:center}
+.toast{background:#142033;color:#fff;padding:10px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);animation:in .2s}
+.toast.err{background:#b42318}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+@media(max-width:640px){.hdr{padding:12px 16px 26px}.hero h1{font-size:23px}.add{display:none!important}.admin .fab{display:block}main,.meta{padding-left:16px;padding-right:16px}.sb kbd{display:none}.sb input{padding-right:16px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="hdr">
+ <div class="bar">
+  <div class="brand"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#1e3a6e"/><path d="M9 22V10l7 8 7-8v12" fill="none" stroke="#7dd3fc" stroke-width="3" stroke-linejoin="round"/></svg>MyURLs</div>
+  <div class="sp"></div>
+  <button class="btn add" id="addBtn">Add URL</button>
+  <button class="ib" id="themeBtn" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  <div class="um">
+   <button class="ib" id="userBtn" aria-label="User menu" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+   <div class="menu" id="menu" hidden></div>
+  </div>
+ </div>
+ <div class="hero">
+  <h1>My applications</h1>
+  <p>Links to the tools and projects I use every day.</p>
+  <div class="sb"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+   <input id="q" type="search" placeholder="Search by name, description or URL" autocomplete="off" aria-label="Search applications"><kbd>/</kbd></div>
+ </div>
+</header>
+<div class="meta"><span id="count" aria-live="polite"></span><span></span></div>
+<main><div class="grid" id="grid" aria-busy="true"></div><div id="empty"></div></main>
+<button class="fab" id="fab" aria-label="Add URL">+</button>
+
+<dialog id="loginD"><form id="loginF" novalidate><h2>Admin sign in</h2>
+ <label for="pw">Password</label><input class="in" id="pw" type="password" autocomplete="current-password" required>
+ <div class="er" id="pwE" role="alert"></div>
+ <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn p">Sign in</button></div></form></dialog>
+
+<dialog id="formD"><form id="linkF" novalidate><h2 id="formT">Add URL</h2>
+ <label for="fn">Application name</label><input class="in" id="fn" maxlength="60" autocomplete="off"><div class="er" id="fnE" role="alert"></div>
+ <label for="fu">URL</label><input class="in" id="fu" inputmode="url" autocomplete="off" placeholder="https://"><div class="er" id="fuE" role="alert"></div>
+ <label for="fd">Short description <span class="cn" id="fdC">0/120</span></label><textarea class="in" id="fd" maxlength="120"></textarea><div class="er" id="fdE" role="alert"></div>
+ <div class="row"><button type="button" class="btn" data-close>Cancel</button><button class="btn p" id="saveB">Save</button></div></form></dialog>
+
+<dialog id="delD"><form method="dialog" style="padding:22px"><h2>Delete URL?</h2><p id="delP" style="color:var(--muted);margin:0"></p>
+ <div class="row"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn dg" id="delB">Delete</button></div></form></dialog>
+<div id="toasts" role="status"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let all=[],isAdmin=false,editId=null,delId=null;
+
+// ---- theme
+const root=document.documentElement;
+function theme(t){root.dataset.theme=t}
+const mq=matchMedia('(prefers-color-scheme: dark)');
+let saved=null;try{saved=localStorage.getItem('theme')}catch(e){}
+theme(saved||(mq.matches?'dark':'light'));
+mq.addEventListener('change',e=>{let s=null;try{s=localStorage.getItem('theme')}catch(x){}if(!s)theme(e.matches?'dark':'light')});
+$('themeBtn').onclick=()=>{const t=root.dataset.theme==='dark'?'light':'dark';theme(t);try{localStorage.setItem('theme',t)}catch(e){}};
+
+// ---- helpers
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function toast(msg,err){const t=el('div','toast'+(err?' err':''),msg);$('toasts').append(t);setTimeout(()=>t.remove(),3200)}
+async function api(method,path,body){
+  const r=await fetch(path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined,credentials:'same-origin'});
+  let d=null;try{d=await r.json()}catch(e){}
+  if(!r.ok){const e=new Error((d&&d.error)||'Request failed');e.status=r.status;throw e}
+  return d;
+}
+function host(u){try{return new URL(u).host+(new URL(u).pathname.replace(/\/$/,''))}catch(e){return u}}
+function expired(){isAdmin=false;render();renderMenu();toast('Session expired',true);$('loginD').showModal();$('pw').focus()}
+
+// ---- cards
+function icon(l){
+  const d=el('div','ico');
+  if(l.icon){d.classList.add('logo');const i=new Image();i.alt='';i.src='https://cdn.simpleicons.org/'+l.icon;
+    i.onerror=()=>{d.classList.remove('logo');d.replaceChildren(document.createTextNode(l.name.trim().charAt(0).toUpperCase()))};d.append(i)}
+  else d.textContent=l.name.trim().charAt(0).toUpperCase();
+  return d;
+}
+function render(){
+  const q=$('q').value.trim().toLowerCase();
+  const list=q?all.filter(l=>(l.name+' '+l.desc+' '+l.url).toLowerCase().includes(q)):all;
+  const g=$('grid');g.replaceChildren();g.setAttribute('aria-busy','false');
+  document.body.classList.toggle('admin',isAdmin);
+  list.forEach(l=>{
+    const c=el('article','card');c.style.setProperty('--c',l.color||'#2563eb');
+    const a=el('a');a.href=l.url;a.target='_blank';a.rel='noopener noreferrer';
+    const t=el('div','txt');t.append(el('div','nm',l.name),el('div','ds',l.desc),el('div','ur',host(l.url)));
+    a.append(icon(l),t);c.append(a);
+    if(isAdmin){const b=el('div','acts'),e=el('button',null,'Edit'),d=el('button','d','Delete');
+      e.onclick=()=>openForm(l);d.onclick=()=>{delId=l.id;$('delP').textContent='"'+l.name+'" will be removed from your dashboard.';$('delD').showModal()};
+      e.setAttribute('aria-label','Edit '+l.name);d.setAttribute('aria-label','Delete '+l.name);b.append(e,d);c.append(b)}
+    g.append(c);
+  });
+  $('count').replaceChildren(q?document.createTextNode(list.length+' of '+all.length+' applications'):document.createTextNode(all.length+' application'+(all.length===1?'':'s')));
+  const em=$('empty');em.replaceChildren();
+  if(!list.length){const w=el('div','empty');
+    if(q){w.append(el('h2',null,'No matches found'),el('p',null,'Nothing matches "'+$('q').value.trim()+'".'));const b=el('button','btn','Clear search');b.onclick=()=>{$('q').value='';render();$('q').focus()};w.append(b)}
+    else{w.append(el('h2',null,'No URLs yet'),el('p',null,isAdmin?'Add your first link to get started.':'Nothing has been added yet.'));if(isAdmin){const b=el('button','btn p','Add URL');b.onclick=()=>openForm();w.append(b)}}
+    em.append(w)}
+}
+function skeletons(){const g=$('grid');for(let i=0;i<8;i++)g.append(el('div','sk'))}
+
+// ---- search
+$('q').addEventListener('input',render);
+document.addEventListener('keydown',e=>{
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(e.key==='/'&&!['input','textarea'].includes(tag)&&!document.querySelector('dialog[open]')){e.preventDefault();$('q').focus();$('q').select()}
+  else if(e.key==='Escape'&&e.target===$('q')){$('q').value='';render()}
+});
+
+// ---- user menu
+function renderMenu(){
+  const m=$('menu');m.replaceChildren();
+  if(isAdmin){m.append(el('div','who','Signed in as admin'));const b=el('button',null,'Sign out');b.onclick=signOut;m.append(b)}
+  else{const b=el('button',null,'Admin sign in');b.onclick=()=>{closeMenu();$('pw').value='';$('pwE').textContent='';$('loginD').showModal();$('pw').focus()};m.append(b)}
+}
+function closeMenu(){$('menu').hidden=true;$('userBtn').setAttribute('aria-expanded','false')}
+$('userBtn').onclick=e=>{e.stopPropagation();const h=$('menu').hidden;$('menu').hidden=!h;$('userBtn').setAttribute('aria-expanded',String(h))};
+document.addEventListener('click',e=>{if(!e.target.closest('.um'))closeMenu()});
+$('menu').addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();$('userBtn').focus()}});
+async function signOut(){closeMenu();try{await api('POST','/api/logout')}catch(e){}isAdmin=false;render();renderMenu();toast('Signed out')}
+
+// ---- dialogs
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
+$('loginF').onsubmit=async e=>{e.preventDefault();$('pwE').textContent='';
+  try{await api('POST','/api/login',{password:$('pw').value});isAdmin=true;$('loginD').close();render();renderMenu();toast('Signed in')}
+  catch(x){$('pwE').textContent=x.message}};
+
+function setErr(id,msg){$(id+'E').textContent=msg||'';$(id).setAttribute('aria-invalid',msg?'true':'false')}
+function normUrl(v){v=v.trim();return v&&!/^https?:\/\//i.test(v)?'https://'+v:v}
+function check(){
+  const n=$('fn').value.trim(),u=normUrl($('fu').value),d=$('fd').value.trim();let ok=true,first=null;
+  const f=(id,m)=>{setErr(id,m);if(m){ok=false;first=first||$(id)}};
+  f('fn',!n?'Application name is required':n.length>60?'Use 60 characters or fewer':'');
+  let um='';if(!u)um='URL is required';else try{if(!new URL(u).host)um='Enter a valid URL'}catch(e){um='Enter a valid URL'}
+  f('fu',um);
+  f('fd',!d?'Description is required':d.length>120?'Use 120 characters or fewer':'');
+  if(first)first.focus();
+  return ok?{name:n,url:u,desc:d}:null;
+}
+$('fd').addEventListener('input',()=>$('fdC').textContent=$('fd').value.length+'/120');
+function openForm(l){
+  editId=l?l.id:null;$('formT').textContent=l?'Edit URL':'Add URL';
+  $('fn').value=l?l.name:'';$('fu').value=l?l.url:'';$('fd').value=l?l.desc:'';
+  ['fn','fu','fd'].forEach(i=>setErr(i,''));$('fdC').textContent=$('fd').value.length+'/120';
+  $('formD').showModal();$('fn').focus();
+}
+$('addBtn').onclick=()=>openForm();$('fab').onclick=()=>openForm();
+$('linkF').onsubmit=async e=>{e.preventDefault();const v=check();if(!v)return;
+  $('saveB').disabled=true;
+  try{
+    if(editId){const r=await api('PUT','/api/urls/'+editId,v);all=all.map(x=>x.id===editId?r:x);toast('URL updated')}
+    else{const r=await api('POST','/api/urls',v);all.push(r);toast('URL added')}
+    $('formD').close();render();
+  }catch(x){
+    if(x.status===401){$('formD').close();expired()}
+    else if(/name/i.test(x.message))setErr('fn',x.message);
+    else if(/url/i.test(x.message))setErr('fu',x.message);
+    else if(/description/i.test(x.message))setErr('fd',x.message);
+    else toast(x.message,true);
+  }finally{$('saveB').disabled=false}};
+$('delB').onclick=async()=>{
+  try{await api('DELETE','/api/urls/'+delId);all=all.filter(x=>x.id!==delId);$('delD').close();render();toast('URL deleted')}
+  catch(x){$('delD').close();if(x.status===401)expired();else toast(x.message,true)}};
+
+// ---- boot
+(async()=>{
+  skeletons();renderMenu();
+  try{const[m,l]=await Promise.all([api('GET','/api/me'),api('GET','/api/urls')]);isAdmin=m.admin;all=l||[]}
+  catch(e){toast('Could not load URLs',true)}
+  render();renderMenu();
+})();
+</script>
+</body>
+</html>

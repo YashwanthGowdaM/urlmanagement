@@ -1,0 +1,26 @@
+services:
+  app:
+    image: ${IMAGE:-ghcr.io/OWNER/myurls:latest}
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    volumes:
+      - myurls-data:/data
+    healthcheck:
+      test: ["CMD", "/myurls", "-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+volumes:
+  myurls-data:
+  caddy-data:
+  caddy-config:
