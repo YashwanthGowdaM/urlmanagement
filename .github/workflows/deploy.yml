@@ -22,6 +22,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - name: Build image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -31,6 +32,7 @@ jobs:
             ${{ env.IMAGE }}:latest
 
       - name: Trivy scan
+        id: scan
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -40,13 +42,55 @@ jobs:
             --scanners vuln --format json --output /out/trivy.json \
             --exit-code 0 "$IMAGE:${{ github.sha }}"
 
-      - name: Quality gate
+      - name: Quality gate and scan report
+        id: gate
         run: |
           count() { jq "[.Results[]?.Vulnerabilities[]? | select(.Severity==\"$1\")] | length" trivy.json; }
-          LOW=$(count LOW); MED=$(count MEDIUM); HIGH=$(count HIGH); CRIT=$(count CRITICAL)
-          TOTAL=$((LOW+MED+HIGH+CRIT))
-          echo "total=$TOTAL low+medium=$((LOW+MED)) high+critical=$((HIGH+CRIT))"
-          if [ "$TOTAL" -ge 10 ] || [ $((LOW+MED)) -ge 8 ] || [ $((HIGH+CRIT)) -ge 2 ]; then
+          CRIT=$(count CRITICAL); HIGH=$(count HIGH); MED=$(count MEDIUM)
+          LOW=$(count LOW); UNK=$(count UNKNOWN)
+          LM=$((LOW+MED)); HC=$((HIGH+CRIT)); TOTAL=$((CRIT+HIGH+MED+LOW))
+          st() { if [ "$1" -lt "$2" ]; then echo "✅ Pass"; else echo "❌ Fail"; fi; }
+
+          {
+            echo "## Trivy scan report"
+            echo
+            echo "Image: \`$IMAGE:$GITHUB_SHA\`"
+            echo
+            echo "### Quality gate"
+            echo
+            echo "| Severity | Allowed count | Actual count | Status |"
+            echo "|---|---|---|---|"
+            echo "| Low + Medium | < 8 | $LM | $(st $LM 8) |"
+            echo "| High + Critical | < 2 | $HC | $(st $HC 2) |"
+            echo "| Total | < 10 | $TOTAL | $(st $TOTAL 10) |"
+            echo
+            echo "### Count by severity"
+            echo
+            echo "| Severity | Count |"
+            echo "|---|---|"
+            echo "| Critical | $CRIT |"
+            echo "| High | $HIGH |"
+            echo "| Medium | $MED |"
+            echo "| Low | $LOW |"
+            echo "| Unknown (not counted in the gate) | $UNK |"
+            echo
+            echo "### All vulnerabilities"
+            echo
+            if [ "$((TOTAL+UNK))" -eq 0 ]; then
+              echo "No vulnerabilities found."
+            else
+              echo "| Severity | Package | Vulnerability | Installed | Fixed in | Title |"
+              echo "|---|---|---|---|---|---|"
+              jq -r '
+                def rank: {"CRITICAL":0,"HIGH":1,"MEDIUM":2,"LOW":3}[.] // 4;
+                [.Results[]?.Vulnerabilities[]?] | sort_by(.Severity | rank)[] |
+                "| \(.Severity) | \(.PkgName) | [\(.VulnerabilityID)](\(.PrimaryURL // "")) | \(.InstalledVersion // "-") | \(.FixedVersion // "-") | \((.Title // "-") | gsub("\\|"; "/") | gsub("\n"; " ") | .[0:90]) |"
+              ' trivy.json
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "total=$TOTAL low+medium=$LM high+critical=$HC"
+          if [ "$TOTAL" -ge 10 ] || [ "$LM" -ge 8 ] || [ "$HC" -ge 2 ]; then
             echo "Quality gate failed"
             exit 1
           fi
@@ -58,9 +102,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push to GHCR
+        id: push
         run: docker push --all-tags "$IMAGE"
 
       - name: Deploy over SSH
+        id: deploy
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -84,5 +130,54 @@ jobs:
             | ssh $OPTS "$REMOTE" "docker login ghcr.io -u '$GH_ACTOR' --password-stdin"
 
           ssh $OPTS "$REMOTE" "cd ~/myurls && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
+          ssh $OPTS "$REMOTE" "cd ~/myurls && docker compose ps" | tee compose-ps.txt
 
           rm -f key.pem
+
+      - name: Deployment summary
+        if: always()
+        env:
+          B: ${{ steps.build.outcome }}
+          S: ${{ steps.scan.outcome }}
+          G: ${{ steps.gate.outcome }}
+          P: ${{ steps.push.outcome }}
+          D: ${{ steps.deploy.outcome }}
+          JOB: ${{ job.status }}
+        run: |
+          show() {
+            case "$1" in
+              success) echo "✅ Success" ;;
+              skipped) echo "⏭️ Skipped" ;;
+              cancelled) echo "⚠️ Cancelled" ;;
+              *) echo "❌ Failed" ;;
+            esac
+          }
+          {
+            echo "## Deployment summary"
+            echo
+            echo "| Item | Value |"
+            echo "|---|---|"
+            echo "| Result | $(show "$JOB") |"
+            echo "| Site | https://myurls.yashwanthgowdam.in |"
+            echo "| Image | \`$IMAGE:$GITHUB_SHA\` |"
+            echo "| Commit | \`${GITHUB_SHA::7}\` by ${{ github.actor }} |"
+            echo "| Branch | ${{ github.ref_name }} |"
+            echo
+            echo "### Pipeline steps"
+            echo
+            echo "| Step | Status |"
+            echo "|---|---|"
+            echo "| Build image | $(show "$B") |"
+            echo "| Trivy scan | $(show "$S") |"
+            echo "| Quality gate | $(show "$G") |"
+            echo "| Push to GHCR | $(show "$P") |"
+            echo "| Deploy over SSH | $(show "$D") |"
+            if [ -f compose-ps.txt ]; then
+              echo
+              echo "### Running containers"
+              echo
+              echo '```'
+              cat compose-ps.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
