@@ -1,38 +1,27 @@
-```yaml
 name: build-scan-deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
   packages: write
 
-concurrency:
-  group: deploy
-  cancel-in-progress: true
+concurrency: deploy
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    env:
-      IMAGE: ghcr.io/${{ github.repository }}
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Convert image name to lowercase
-        run: |
-          echo "IMAGE=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      - name: Set image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -41,166 +30,59 @@ jobs:
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
 
-      #####################################################################
-      # Install Trivy
-      #####################################################################
-      - name: Install Trivy
+      - name: Trivy scan
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget -q https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.67.2_Linux-64bit.deb
-          sudo dpkg -i trivy_0.67.2_Linux-64bit.deb
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD":/out \
+            -e TRIVY_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-db:2,ghcr.io/aquasecurity/trivy-db:2 \
+            aquasec/trivy:0.58.1 image \
+            --scanners vuln --format json --output /out/trivy.json \
+            --exit-code 0 "$IMAGE:${{ github.sha }}"
 
-      #####################################################################
-      # Scan Image
-      #####################################################################
-      - name: Scan Docker image
+      - name: Quality gate
         run: |
-          trivy image \
-            --format json \
-            --output trivy.json \
-            $IMAGE:${GITHUB_SHA}
-
-      #####################################################################
-      # Quality Gate
-      #####################################################################
-      - name: Quality Gate
-        run: |
-          sudo apt-get install -y jq
-
-          LOW=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="LOW")] | length' trivy.json)
-          MEDIUM=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length' trivy.json)
-          HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length' trivy.json)
-          CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' trivy.json)
-
-          TOTAL=$((LOW + MEDIUM + HIGH + CRITICAL))
-          LM=$((LOW + MEDIUM))
-          HC=$((HIGH + CRITICAL))
-
-          echo "------------------------------------"
-          echo "LOW       : $LOW"
-          echo "MEDIUM    : $MEDIUM"
-          echo "HIGH      : $HIGH"
-          echo "CRITICAL  : $CRITICAL"
-          echo "TOTAL     : $TOTAL"
-          echo "------------------------------------"
-
-          if [ "$TOTAL" -ge 10 ] || [ "$LM" -ge 8 ] || [ "$HC" -ge 2 ]; then
-            echo "❌ Quality gate failed."
+          count() { jq "[.Results[]?.Vulnerabilities[]? | select(.Severity==\"$1\")] | length" trivy.json; }
+          LOW=$(count LOW); MED=$(count MEDIUM); HIGH=$(count HIGH); CRIT=$(count CRITICAL)
+          TOTAL=$((LOW+MED+HIGH+CRIT))
+          echo "total=$TOTAL low+medium=$((LOW+MED)) high+critical=$((HIGH+CRIT))"
+          if [ "$TOTAL" -ge 10 ] || [ $((LOW+MED)) -ge 8 ] || [ $((HIGH+CRIT)) -ge 2 ]; then
+            echo "Quality gate failed"
             exit 1
           fi
 
-          echo "✅ Quality gate passed."
-
-      #####################################################################
-      # Login to GHCR
-      #####################################################################
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      #####################################################################
-      # Push Images
-      #####################################################################
-      - name: Push Docker images
-        run: |
-          docker push $IMAGE:${GITHUB_SHA}
-          docker push $IMAGE:latest
+      - name: Push to GHCR
+        run: docker push --all-tags "$IMAGE"
 
-      #####################################################################
-      # Configure SSH
-      #####################################################################
-      - name: Configure SSH Key
+      - name: Deploy over SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          install -m 600 /dev/null key.pem
-          printf '%s\n' "$SSH_PRIVATE_KEY" > key.pem
-
-      #####################################################################
-      # Create Remote Directory
-      #####################################################################
-      - name: Prepare Remote Directory
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-        run: |
-          ssh -i key.pem -o StrictHostKeyChecking=accept-new \
-            $SSH_USER@$SSH_HOST \
-            "mkdir -p ~/myurls"
-
-      #####################################################################
-      # Copy Deployment Files
-      #####################################################################
-      - name: Copy Files
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-        run: |
-          scp -i key.pem \
-            -o StrictHostKeyChecking=accept-new \
-            docker-compose.yml \
-            Caddyfile \
-            $SSH_USER@$SSH_HOST:~/myurls/
-
-      #####################################################################
-      # Create .env
-      #####################################################################
-      - name: Upload Environment File
-        env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        run: |
-          printf "IMAGE=%s:%s\nADMIN_PASSWORD=%s\n" \
-            "$IMAGE" \
-            "$GITHUB_SHA" \
-            "$ADMIN_PASSWORD" \
-          | ssh -i key.pem \
-              -o StrictHostKeyChecking=accept-new \
-              $SSH_USER@$SSH_HOST \
-              "umask 077 && cat > ~/myurls/.env"
-
-      #####################################################################
-      # Login to GHCR on Remote Server
-      #####################################################################
-      - name: Remote GHCR Login
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
         run: |
-          printf '%s' "$GH_TOKEN" | ssh \
-            -i key.pem \
-            -o StrictHostKeyChecking=accept-new \
-            $SSH_USER@$SSH_HOST \
-            "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          install -m 600 /dev/null key.pem
+          printf '%s\n' "$SSH_PRIVATE_KEY" > key.pem
+          OPTS="-i key.pem -o StrictHostKeyChecking=accept-new"
+          REMOTE="$SSH_USER@$SSH_HOST"
 
-      #####################################################################
-      # Deploy
-      #####################################################################
-      - name: Deploy Application
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-        run: |
-          ssh -i key.pem \
-            -o StrictHostKeyChecking=accept-new \
-            $SSH_USER@$SSH_HOST <<EOF
-          set -e
-          cd ~/myurls
-          docker compose pull
-          docker compose up -d --remove-orphans
-          docker image prune -af
-          EOF
+          ssh $OPTS "$REMOTE" "mkdir -p ~/myurls"
+          scp $OPTS docker-compose.yml Caddyfile "$REMOTE:myurls/"
 
-      #####################################################################
-      # Cleanup
-      #####################################################################
-      - name: Cleanup
-        if: always()
-        run: rm -f key.pem
-```
+          printf 'IMAGE=%s:%s\nADMIN_PASSWORD=%s\n' "$IMAGE" "$GITHUB_SHA" "$ADMIN_PASSWORD" \
+            | ssh $OPTS "$REMOTE" "umask 077; cat > ~/myurls/.env"
+
+          printf '%s' "$GH_TOKEN" \
+            | ssh $OPTS "$REMOTE" "docker login ghcr.io -u '$GH_ACTOR' --password-stdin"
+
+          ssh $OPTS "$REMOTE" "cd ~/myurls && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
+
+          rm -f key.pem
