@@ -1,4 +1,4 @@
-myurls.yashwanthgowdam.in {
+producturl.yashwanthgowdam.in {
 	encode zstd gzip
 	reverse_proxy app:8080
 }
