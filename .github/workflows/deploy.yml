@@ -120,17 +120,17 @@ jobs:
           OPTS="-i key.pem -o StrictHostKeyChecking=accept-new"
           REMOTE="$SSH_USER@$SSH_HOST"
 
-          ssh $OPTS "$REMOTE" "mkdir -p ~/myurls"
-          scp $OPTS docker-compose.yml Caddyfile "$REMOTE:myurls/"
+          ssh $OPTS "$REMOTE" "mkdir -p ~/producturl"
+          scp $OPTS docker-compose.yml Caddyfile "$REMOTE:producturl/"
 
           printf 'IMAGE=%s:%s\nADMIN_PASSWORD=%s\n' "$IMAGE" "$GITHUB_SHA" "$ADMIN_PASSWORD" \
-            | ssh $OPTS "$REMOTE" "umask 077; cat > ~/myurls/.env"
+            | ssh $OPTS "$REMOTE" "umask 077; cat > ~/producturl/.env"
 
           printf '%s' "$GH_TOKEN" \
             | ssh $OPTS "$REMOTE" "docker login ghcr.io -u '$GH_ACTOR' --password-stdin"
 
-          ssh $OPTS "$REMOTE" "cd ~/myurls && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
-          ssh $OPTS "$REMOTE" "cd ~/myurls && docker compose ps" | tee compose-ps.txt
+          ssh $OPTS "$REMOTE" "cd ~/producturl && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"
+          ssh $OPTS "$REMOTE" "cd ~/producturl && docker compose ps" | tee compose-ps.txt
 
           rm -f key.pem
 
@@ -158,7 +158,7 @@ jobs:
             echo "| Item | Value |"
             echo "|---|---|"
             echo "| Result | $(show "$JOB") |"
-            echo "| Site | https://myurls.yashwanthgowdam.in |"
+            echo "| Site | https://producturl.yashwanthgowdam.in |"
             echo "| Image | \`$IMAGE:$GITHUB_SHA\` |"
             echo "| Commit | \`${GITHUB_SHA::7}\` by ${{ github.actor }} |"
             echo "| Branch | ${{ github.ref_name }} |"
